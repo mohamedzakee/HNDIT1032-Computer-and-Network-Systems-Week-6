@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IT1032 Week 6 Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday study: calm, exact, a lab bench for one week of HNDIT1032
+   IDEA a hardware datasheet: memory parts laid out by speed, with live test rigs
+   PICTURE the clickable memory pyramid, then working rigs: CPU stepper, spinning disk, tape vs disk race
+   COLOUR white ground, black ink, concrete planes, one blue for interaction, safety yellow for what just changed
+   TYPE Hanken Grotesk display + text, JetBrains Mono for register values
+   LAYOUT laptop: title row + tabs, then pyramid left and detail right; phone: stacked title, pyramid, detail */
+:root{color-scheme:light;--bg:#fff;--ink:#111315;--mute:#5b5f63;--line:#e2e2de;--con:#d8d8d4;--plane:#f4f4f2;--hi:#ffe600;--blue:#1f5fd6;--blue-t:#e8effc;--ok:#17834a;--ok-t:#e6f4ec;--bad:#c4321f;--bad-t:#fbeae7}
+*{box-sizing:border-box;min-width:0}
+html,body{background:#fff;color:var(--ink)}
+body{margin:0;font:16px/1.55 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{line-height:1.1;letter-spacing:-.02em;margin:0}
+h1{font-size:clamp(30px,4.4vw,46px);font-weight:800;text-wrap:balance}
+h2{font-size:clamp(22px,2.6vw,28px);font-weight:700;margin-bottom:12px}
+h3{font-size:18px;font-weight:700;margin-bottom:8px}
+p{margin:0 0 10px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 max(4vw,16px)}
+header{border-bottom:1px solid var(--line);padding-top:clamp(20px,3vw,36px)}
+.course{color:var(--mute);font-weight:600;margin-bottom:6px}
+.lead{color:var(--mute);max-width:62ch;margin:10px 0 18px}
+nav{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav a{flex:none;padding:12px 16px;border-bottom:3px solid transparent;color:var(--mute);text-decoration:none;font-weight:600;min-height:44px}
+nav a:hover{color:var(--ink)}
+nav a[aria-current=page]{color:var(--ink);border-color:var(--ink)}
+main section.view{display:none;padding-block:clamp(22px,3.4vw,44px)}
+main section.view.on{display:block}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(18px,3vw,40px);align-items:start}
+.panel{background:var(--plane);border:1px solid var(--line);border-radius:12px;padding:clamp(16px,2.2vw,24px)}
+.muted{color:var(--mute)}
+.small{font-size:14px}
+button,select,input{font:inherit;font-size:16px}
+.btn{min-height:44px;padding:10px 18px;border-radius:10px;border:1px solid var(--ink);background:var(--ink);color:#fff;font-weight:600;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--con)}
+.btn:hover{filter:brightness(1.15)}
+.btn.ghost:hover{border-color:var(--ink);filter:none}
+.btn:focus-visible,select:focus-visible,input:focus-visible,nav a:focus-visible,.lvl:focus-visible,summary:focus-visible,.opt:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+select,input[type=number]{min-height:44px;border:1px solid var(--con);border-radius:10px;padding:8px 12px;background:#fff;color:var(--ink)}
+label{font-weight:600;font-size:14px}
+input[type=range]{width:100%;accent-color:var(--blue);min-height:32px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;background:var(--plane)}
+.scroll{overflow-x:auto}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.nw{white-space:nowrap}
+/* pyramid */
+.pyr{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0}
+.lvl{border:1.5px solid var(--con);background:#fff;border-radius:10px;padding:12px 14px;text-align:center;cursor:pointer;transition:background .15s,border-color .15s}
+.lvl b{display:block;font-size:16px}
+.lvl span{font-size:13px;color:var(--mute)}
+.lvl:hover{border-color:var(--ink)}
+.lvl.sel{border-color:var(--blue);background:var(--blue-t)}
+.axis{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);font-weight:600;margin-top:6px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.fact{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.fact small{display:block;color:var(--mute);font-size:13px}
+.fact b{font-size:17px}
+/* notes */
+.notes{margin-top:clamp(28px,4vw,48px);display:grid;gap:12px}
+details.note{border:1px solid var(--line);border-radius:12px;background:#fff}
+details.note>summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:17px;list-style:none;display:flex;justify-content:space-between;gap:12px;min-height:44px}
+details.note>summary::after{content:"+";font-weight:400;font-size:22px;line-height:1}
+details.note[open]>summary::after{content:"\2212"}
+details.note>div{padding:0 18px 18px}
+details.note ul{margin:0 0 10px;padding-left:20px}
+.key{background:var(--hi);padding:0 4px;border-radius:3px}
+/* cpu lab */
+.lab{border:1px solid var(--line);border-radius:14px;padding:clamp(16px,2.4vw,26px);margin-bottom:22px}
+.cpu{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}
+.chip{border:2px solid var(--ink);border-radius:12px;padding:14px}
+.chip h3{display:flex;justify-content:space-between}
+.units{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.unit{background:var(--plane);border-radius:8px;padding:8px 10px;font-weight:700;font-size:14px;text-align:center}
+.unit.act{background:var(--blue);color:#fff}
+.regs{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.reg{border:1px solid var(--con);border-radius:8px;padding:8px 10px;transition:background .3s}
+.reg small{display:block;font-size:13px;color:var(--mute);font-weight:600}
+.reg .mono{font-size:17px}
+.reg.ch,.mem tr.ch td{background:var(--hi)}
+.mem td,.mem th{padding:6px 10px}
+.mem tr.pc td:first-child{box-shadow:inset 4px 0 0 var(--blue)}
+.phase{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--ink);color:#fff;font-size:13px;font-weight:700}
+.msg{min-height:52px;margin:12px 0;font-size:16px}
+/* disk */
+.disk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:22px;align-items:start}
+.diskfig{aspect-ratio:32/34;max-width:340px;width:100%;margin:0 auto}
+.diskfig svg{width:100%;height:100%;display:block}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(9em,1fr));gap:8px;margin-top:12px}
+.out div{background:var(--plane);border-radius:8px;padding:8px 10px}
+.out small{display:block;color:var(--mute);font-size:13px}
+.out b{font-size:20px;white-space:nowrap}
+.out .big{background:var(--hi)}
+.ctl{display:grid;gap:12px}
+/* race */
+.track{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:4px;margin:6px 0 4px}
+.cell{aspect-ratio:1;border:1px solid var(--con);border-radius:5px;display:grid;place-items:center;font-size:12px;color:var(--mute);background:#fff}
+.cell.scan{background:var(--con)}
+.cell.hit{background:var(--hi);border-color:var(--ink);color:var(--ink);font-weight:700}
+.cell.tgt{border:2px solid var(--blue)}
+/* cards */
+.fc{perspective:1200px;max-width:720px;margin:0 auto}
+.card{position:relative;min-height:280px;cursor:pointer;transform-style:preserve-3d;transition:transform .45s}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;padding:28px;display:flex;flex-direction:column;justify-content:center;border:1.5px solid var(--ink);background:#fff}
+.face.back{transform:rotateY(180deg);background:var(--plane)}
+.face .q{font-size:clamp(20px,2.6vw,26px);font-weight:700;line-height:1.25}
+.face .a{font-size:17px}
+.face small{position:absolute;top:16px;left:28px;color:var(--mute);font-weight:600;font-size:13px}
+.bar{height:8px;background:var(--plane);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink);transition:width .3s}
+/* quiz */
+.quiz{max-width:760px;margin:0 auto}
+.opt{display:block;width:100%;text-align:left;padding:14px 16px;margin:8px 0;border:1.5px solid var(--con);border-radius:10px;background:#fff;cursor:pointer;min-height:44px;color:var(--ink)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.right{border-color:var(--ok);background:var(--ok-t)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-t)}
+.opt:disabled{cursor:default}
+.exp{border-left:4px solid var(--ink);padding:10px 14px;background:var(--plane);border-radius:0 8px 8px 0;margin:12px 0}
+/* tutorial */
+.tq{border-bottom:1px solid var(--line);padding:16px 0}
+.tq .qh{display:flex;gap:14px;align-items:flex-start}
+.tq .n{flex:none;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-weight:700;font-size:14px}
+.tq.done .n{background:var(--ink);color:#fff}
+.tq .qt{font-weight:700;font-size:17px;flex:1}
+.tq .ans{margin:10px 0 0 48px;padding:12px 14px;background:var(--plane);border-radius:10px;display:none}
+.tq.show .ans{display:block}
+.tq .acts{margin:8px 0 0 48px}
+.chk{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;min-height:44px;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--ink)}
+footer{border-top:1px solid var(--line);padding:20px 0 32px;color:var(--mute);font-size:14px}
+@media(max-width:860px){.grid2,.cpu,.disk{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){table{font-size:13px}th,td{padding:6px 5px}.facts{grid-template-columns:1fr 1fr}.track{grid-template-columns:repeat(8,minmax(0,1fr))}.tq .ans,.tq .acts{margin-left:0}.face{padding:22px}}
+@media(prefers-reduced-motion:reduce){.card,.reg,.lvl{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="course">HNDIT1032 Computer and Network Systems · Week 06</div>
+    <h1>Memory, Storage &amp; CPU</h1>
+    <p class="lead">Explore the memory hierarchy, run the CPU and disk rigs, then test yourself with flashcards, a quiz and the Tutorial 06 answers. Your progress is kept in this browser.</p>
+    <nav id="nav" aria-label="Sections">
+      <a href="#explore">Explore</a>
+      <a href="#labs">Labs</a>
+      <a href="#cards">Flashcards</a>
+      <a href="#quiz">Quiz</a>
+      <a href="#tutorial">Tutorial 06</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+<!-- EXPLORE -->
+<section class="view" id="v-explore">
+  <div class="grid2">
+    <div>
+      <h2>The memory hierarchy</h2>
+      <p class="muted small">Tap a level. Higher levels are faster and cost more per bit; lower levels hold far more.</p>
+      <div class="pyr" id="pyr"></div>
+      <div class="axis"><span>▲ Faster, costlier per bit</span><span>Larger capacity ▼</span></div>
+    </div>
+    <div class="panel" id="lvlDetail" aria-live="polite"></div>
+  </div>
+
+  <div class="notes" id="notes">
+    <details class="note" open><summary>Memory basics: units, capacity, access time</summary><div>
+      <p>Memory stores data, the instructions needed during processing, and output results. Two factors describe any memory: <b>capacity</b> (how much it can store, in bits or bytes) and <b>access time</b> (time from a read/write request until the data is available; less access time means faster memory).</p>
+      <div class="scroll"><table><thead><tr><th>Unit</th><th>Equals</th></tr></thead><tbody>
+      <tr><td>Bit</td><td>0 or 1, the smallest unit</td></tr><tr><td>Nibble</td><td>4 bits</td></tr><tr><td>Byte</td><td>8 bits, one character</td></tr><tr><td>Word</td><td>16, 32 or 64 bits (CPU dependent)</td></tr><tr><td>KB · MB · GB · TB</td><td>each 1024 of the one before</td></tr></tbody></table></div>
+    </div></details>
+    <details class="note"><summary>RAM: DRAM and SRAM</summary><div>
+      <ul><li>RAM stores data and instructions while the computer runs. It is <span class="key">volatile</span>: contents are lost at power-off and reloaded from disk at the next start.</li><li>Random access: any location takes the same time. Read and write at the same speed. Size in MB/GB, speed in nanoseconds.</li><li>Performance depends on access speed and data transfer unit size.</li></ul>
+      <div class="scroll"><table><thead><tr><th>Feature</th><th>DRAM</th><th>SRAM</th></tr></thead><tbody>
+      <tr><td>Cell</td><td>1 transistor + 1 capacitor</td><td>4–6 transistors</td></tr><tr><td>Refresh</td><td>Continually</td><td>Not needed</td></tr><tr><td>Speed</td><td class="nw">50–150 ns</td><td class="nw">2–10 ns</td></tr><tr><td>Cost</td><td>Cheap</td><td>Expensive</td></tr><tr><td>Use</td><td>Main memory</td><td>Cache</td></tr></tbody></table></div>
+      <p style="margin-top:10px"><b>How DRAM works:</b> each bit is charge on a tiny capacitor, switched by a transistor. Charged = 1, empty = 0. The charge leaks, so a refresh circuit rereads and rewrites every cell thousands of times a second.</p>
+    </div></details>
+    <details class="note"><summary>Memory modules: SIMM and DIMM</summary><div>
+      <p>RAM chips sit on a printed circuit board that plugs into a motherboard slot.</p>
+      <div class="scroll"><table><thead><tr><th>Feature</th><th>SIMM</th><th>DIMM</th></tr></thead><tbody>
+      <tr><td>Name</td><td>Single Inline Memory Module</td><td>Dual Inline Memory Module</td></tr><tr><td>Contacts</td><td>Both sides joined: one set</td><td>Each side separate: two sets</td></tr><tr><td>Data path</td><td>32-bit</td><td>64-bit</td></tr><tr><td>Pins</td><td>30 or 72</td><td>168, 184, 240, 288</td></tr><tr><td>Install</td><td>In pairs, older PCs</td><td>Singly, modern PCs</td></tr></tbody></table></div>
+    </div></details>
+    <details class="note"><summary>ROM, BIOS, POST, bootstrap loader and CMOS</summary><div>
+      <ul><li>ROM is <span class="key">non-volatile</span>, programmed by the manufacturer, and holds programs that stay in the computer permanently, including the BIOS and POST.</li><li><b>POST</b> (Power-On Self-Test) checks the CPU, RAM, keyboard and drives at switch-on; faults show as beeps or messages.</li><li><b>Bootstrap loader</b> finds the operating system on storage and loads it into RAM.</li><li><b>CMOS</b> is battery-backed memory holding BIOS settings: date and time, boot order, hardware setup.</li></ul>
+      <div class="scroll"><table><thead><tr><th>Type</th><th>Written by</th><th>Erased by</th></tr></thead><tbody>
+      <tr><td>Mask ROM</td><td>Manufacturer</td><td>Cannot be erased</td></tr><tr><td>PROM</td><td>User, once</td><td>Cannot be erased</td></tr><tr><td>EPROM</td><td>User</td><td>Ultraviolet light, whole chip, removed</td></tr><tr><td>EEPROM</td><td>User, electrically</td><td>Electrically, byte by byte, in circuit</td></tr><tr><td>Flash</td><td>Electrically</td><td>Electrically, in blocks</td></tr></tbody></table></div>
+      <p style="margin-top:10px"><b>Flash memory:</b> semiconductor, non-volatile, rewritable, erased electrically in blocks. No moving parts, small, low power, limited write cycles. Pen drives, memory cards, SSDs.</p>
+    </div></details>
+    <details class="note"><summary>Secondary storage and access methods</summary><div>
+      <p>RAM is costly, small and volatile, so a computer also needs cheap, large, non-volatile secondary storage. The CPU cannot use it directly; data is copied to RAM first.</p>
+      <ul><li><b>Sequential access:</b> read from the start, in order, until the data is reached. Slow. Example: magnetic tape.</li><li><b>Direct access:</b> jump straight to the data by its address. Examples: magnetic disk, optical disk.</li></ul>
+      <p><b>Magnetic tape:</b> cheap, large, portable; sequential so slow; needs protection from dust; best for backup and archiving.</p>
+      <p><b>Magnetic disk:</b> a platter coated with magnetic oxide; magnetised spot = 1, none = 0. Tracks are circles, sectors divide tracks, a cylinder is the same track on every platter. <b>Seek time</b> moves the head to the track, <b>latency</b> waits for the sector to rotate under it, <b>transfer rate</b> is how fast data moves. Access time = seek + latency.</p>
+      <p><b>Floppy disk:</b> portable, small, cheap; 5¼-inch (360 KB–1.2 MB) and 3½-inch (up to 1.44 MB).</p>
+      <p><b>Optical disk:</b> read by laser, no magnetism. <b>CD-ROM</b>: pits scatter light (0), lands reflect it (1), about 700 MB. <b>DVD-ROM</b>: denser tracks, both sides, compression, 4.7 GB per side, 9.4 GB double-sided.</p>
+    </div></details>
+    <details class="note"><summary>CPU: ALU, control unit and registers</summary><div>
+      <p>The CPU (microprocessor, a single IC chip) executes stored program instructions fetched from memory. Parts: <b>ALU</b> (arithmetic: + − × ÷; logic: &gt;, &lt;, = comparisons), <b>Control Unit</b> (coordinates I/O, tells when to fetch, what to do, where to store results, and sequences events) and <b>registers</b> (fastest, smallest storage, inside the CPU).</p>
+      <div class="scroll"><table><thead><tr><th>Register</th><th>Holds</th></tr></thead><tbody>
+      <tr><td>ACC Accumulator</td><td>Result of arithmetic and logic operations</td></tr><tr><td>IR Instruction Register</td><td>Current instruction, most recently fetched</td></tr><tr><td>PC Program Counter</td><td>Address of the next instruction</td></tr><tr><td>MAR Memory Address Register</td><td>Address of the next memory location to access</td></tr><tr><td>MBR Memory Buffer Register</td><td>Data read from or going to memory</td></tr><tr><td>DR Data Register</td><td>Operands and other data</td></tr></tbody></table></div>
+    </div></details>
+  </div>
+</section>
+
+<!-- LABS -->
+<section class="view" id="v-labs">
+  <div class="lab">
+    <h2>Fetch–decode–execute stepper</h2>
+    <p class="muted small">A four-instruction program adds 7 and 5. Step through it and watch each register change (yellow = just changed).</p>
+    <div class="cpu">
+      <div class="chip">
+        <h3><span>CPU</span><span class="phase" id="phase">Ready</span></h3>
+        <div class="units"><div class="unit" id="uCU">Control Unit</div><div class="unit" id="uALU">ALU</div></div>
+        <div class="regs" id="regs"></div>
+      </div>
+      <div><div class="scroll"><table class="mem"><thead><tr><th>Address</th><th>Main memory</th></tr></thead><tbody id="mem"></tbody></table></div></div>
+    </div>
+    <p class="msg" id="msg" aria-live="polite"></p>
+    <div class="row"><button class="btn ghost" id="cBack">Back</button><button class="btn" id="cStep">Step</button><button class="btn ghost" id="cRun">Run to end</button><button class="btn ghost" id="cReset">Reset</button><span class="muted small" id="cCount"></span></div>
+  </div>
+
+  <div class="lab">
+    <h2>Magnetic disk access time</h2>
+    <p class="muted small">Set the drive, then press Read. The arm seeks to the track, waits for the yellow sector to rotate under the head, then reads.</p>
+    <div class="disk">
+      <div><div class="diskfig"><svg id="disk" viewBox="0 0 320 340" role="img" aria-label="Spinning disk with read/write head"></svg></div><p class="msg small" id="dStat" aria-live="polite" style="text-align:center">Idle</p></div>
+      <div class="ctl">
+        <div><label for="seek">Average seek time: <span id="seekV" class="mono"></span></label><input type="range" id="seek" min="2" max="15" step="0.5" value="9"></div>
+        <div class="row"><label for="rpm">Spindle speed</label><select id="rpm"><option>4200</option><option>5400</option><option selected>7200</option><option>10000</option><option>15000</option></select><span class="muted small">rpm</span></div>
+        <div><label for="rate">Data transfer rate: <span id="rateV" class="mono"></span></label><input type="range" id="rate" min="20" max="250" step="10" value="150"></div>
+        <div class="row"><label for="fsize">File size</label><input type="number" id="fsize" value="4" min="0" step="0.5" style="width:7em"><span class="muted small">MB</span></div>
+        <div class="out" id="dOut"></div>
+        <p class="small muted" id="dWork"></p>
+        <div class="row"><button class="btn" id="dGo">Read a sector</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lab">
+    <h2>Sequential vs direct access</h2>
+    <p class="muted small">Pick a block to find. The tape must read every block before it; the disk jumps straight to the address.</p>
+    <div class="row" style="margin-bottom:10px"><label for="tgt">Find block</label><input type="number" id="tgt" min="0" max="15" value="11" style="width:6em"><button class="btn" id="rGo">Race</button><button class="btn ghost" id="rRand">Random block</button></div>
+    <div class="small" style="font-weight:700">Magnetic tape (sequential) · reads: <span id="tapeN" class="mono">0</span></div>
+    <div class="track" id="tape"></div>
+    <div class="small" style="font-weight:700;margin-top:12px">Magnetic disk (direct) · reads: <span id="diskN" class="mono">0</span></div>
+    <div class="track" id="dsk"></div>
+  </div>
+
+  <div class="lab">
+    <h2>Memory unit converter</h2>
+    <div class="row"><label for="uv">Value</label><input type="number" id="uv" value="4" min="0" step="any" style="width:9em"><select id="uu" aria-label="Unit"><option>bit</option><option>byte</option><option>KB</option><option>MB</option><option selected>GB</option><option>TB</option></select></div>
+    <div class="scroll" style="margin-top:12px"><table><thead><tr><th>Unit</th><th style="text-align:right">Value</th></tr></thead><tbody id="uOut"></tbody></table></div>
+    <p class="small muted" style="margin-top:8px">Uses 1 byte = 8 bits and 1 KB = 1024 bytes, as in the lecture.</p>
+  </div>
+</section>
+
+<!-- FLASHCARDS -->
+<section class="view" id="v-cards">
+  <div class="fc">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px"><h2 style="margin:0">Flashcards</h2><span class="muted small" id="fcPos"></span></div>
+    <div class="card" id="card" tabindex="0" role="button" aria-label="Flip card"><div class="face"><small>Question</small><div class="q" id="fcQ"></div></div><div class="face back"><small>Answer</small><div class="a" id="fcA"></div></div></div>
+    <p class="muted small" style="text-align:center;margin-top:10px">Tap the card or press Space to flip. Arrow keys move.</p>
+    <div class="row" style="justify-content:center"><button class="btn ghost" id="fPrev">Previous</button><button class="btn ghost" id="fShuf">Shuffle</button><button class="btn" id="fKnow">I know this</button><button class="btn ghost" id="fNext">Next</button></div>
+    <div style="margin-top:18px"><div class="row small" style="justify-content:space-between"><span>Known</span><span id="fKnown" class="mono"></span></div><div class="bar"><i id="fBar"></i></div></div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section class="view" id="v-quiz">
+  <div class="quiz" id="quizBox"></div>
+</section>
+
+<!-- TUTORIAL -->
+<section class="view" id="v-tutorial">
+  <div class="row" style="justify-content:space-between;align-items:end;margin-bottom:6px"><div><h2 style="margin:0">Tutorial 06 model answers</h2><p class="muted small" style="margin:6px 0 0">Try each question first, then reveal the answer and tick it off.</p></div><div class="row"><button class="btn ghost" id="tAll">Show all answers</button></div></div>
+  <div style="margin:14px 0 4px"><div class="row small" style="justify-content:space-between"><span>Completed</span><span id="tDone" class="mono"></span></div><div class="bar"><i id="tBar"></i></div></div>
+  <div id="tList"></div>
+</section>
+</main>
+
+<footer><div class="wrap">HNDIT1032 · SLIATE · Based on the Week 06 lecture (Memory, Storage &amp; CPU) and Tutorial 06. Reference: Clements, <i>The Principles of Computer Hardware</i>, 4th ed., 2006.</div></footer>
+
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {get(k,d){try{const v=localStorage.getItem('it1032w6-'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('it1032w6-'+k,JSON.stringify(v))}catch(e){}}};
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- routing ---------- */
+const views = ['explore','labs','cards','quiz','tutorial'];
+const route = () => {
+  const h = location.hash.slice(1); const v = views.includes(h) ? h : 'explore';
+  views.forEach(x => $('#v-'+x).classList.toggle('on', x === v));
+  document.querySelectorAll('#nav a').forEach(a => { if (a.getAttribute('href') === '#'+v) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
+  if (v === 'labs') drawDisk();
+};
+addEventListener('hashchange', route);
+
+/* ---------- pyramid ---------- */
+const levels = [
+  {n:'Registers', s:'Inside the CPU', w:34, speed:'Under 1 ns', cap:'Bytes', vol:'Volatile', cost:'Highest', d:'High-speed storage areas inside the CPU. They hold the data, instructions, addresses and intermediate results being processed right now. Fastest memory, smallest capacity. Examples: ACC, IR, PC, MAR, MBR, DR.'},
+  {n:'Cache memory', s:'SRAM', w:50, speed:'2–10 ns', cap:'KB to MB', vol:'Volatile', cost:'Very high', d:'Small, fast SRAM between the CPU and main memory. It keeps copies of frequently used data and instructions so the CPU does not wait for slower DRAM. SRAM needs no refreshing.'},
+  {n:'Primary memory', s:'RAM and ROM', w:66, speed:'50–150 ns (DRAM)', cap:'GB', vol:'RAM volatile, ROM not', cost:'Medium', d:'Main memory on the motherboard, accessed directly by the CPU. RAM (DRAM) holds running programs and data and is lost at power-off. ROM holds the BIOS, POST and bootstrap loader permanently.'},
+  {n:'Secondary storage', s:'Magnetic disk, SSD', w:82, speed:'Milliseconds (HDD)', cap:'Hundreds of GB to TB', vol:'Non-volatile', cost:'Low', d:'Permanent, large storage for the OS, programs and files. Direct access. The CPU cannot use it directly: data is copied into RAM first. Hard disk delays come from seek time and rotational latency.'},
+  {n:'Offline storage', s:'Optical disk, magnetic tape', w:100, speed:'Slowest', cap:'Very large', vol:'Non-volatile', cost:'Lowest per bit', d:'Removable media for distribution, backup and archives. CDs and DVDs are direct access, read by laser. Magnetic tape is sequential access: cheap and huge, but slow.'}
+];
+let sel = store.get('lvl', 0);
+const drawPyr = () => {
+  $('#pyr').innerHTML = levels.map((l,i) => `<div class="lvl${i===sel?' sel':''}" role="button" tabindex="0" data-i="${i}" style="width:${l.w}%" aria-pressed="${i===sel}"><b>${l.n}</b><span>${l.s}</span></div>`).join('');
+  const l = levels[sel];
+  $('#lvlDetail').innerHTML = `<div class="muted small" style="font-weight:600">Level ${sel+1} of 5</div><h2 style="margin-top:4px">${l.n}</h2><p>${l.d}</p><div class="facts"><div class="fact"><small>Access speed</small><b>${l.speed}</b></div><div class="fact"><small>Typical capacity</small><b>${l.cap}</b></div><div class="fact"><small>Volatility</small><b>${l.vol}</b></div><div class="fact"><small>Cost per bit</small><b>${l.cost}</b></div></div><div class="row"><button class="btn ghost" id="lvUp" ${sel?'':'disabled'}>Up a level</button><button class="btn ghost" id="lvDn" ${sel<4?'':'disabled'}>Down a level</button></div>`;
+  store.set('lvl', sel);
+};
+$('#pyr').addEventListener('click', e => { const t = e.target.closest('.lvl'); if (t) { sel = +t.dataset.i; drawPyr(); } });
+$('#pyr').addEventListener('keydown', e => { const t = e.target.closest('.lvl'); if (t && (e.key==='Enter'||e.key===' ')) { e.preventDefault(); sel = +t.dataset.i; drawPyr(); } });
+$('#lvlDetail').addEventListener('click', e => { if (e.target.id==='lvUp' && sel>0) sel--; else if (e.target.id==='lvDn' && sel<4) sel++; else return; drawPyr(); });
+
+/* ---------- CPU stepper ---------- */
+const prog = {100:'LOAD 200',101:'ADD 201',102:'STORE 202',103:'HALT',200:7,201:5,202:0};
+const desc = {LOAD:'copy a value from memory into the accumulator.', ADD:'add a value from memory to the accumulator (ALU work).', STORE:'write the accumulator back to memory.'};
+const snaps = [];
+{
+  const r = {PC:100,MAR:'–',MBR:'–',IR:'–',ACC:0}; const m = {...prog};
+  const push = (ph,msg,ch,u) => snaps.push({r:{...r},m:{...m},ph,msg,ch,u:u||''});
+  push('Ready','Program is stored at addresses 100–103 and data at 200–202. PC holds 100, the first instruction. Press Step.',[]);
+  for (let guard=0; guard<10; guard++) {
+    r.MAR = r.PC; push('Fetch',`MAR ← PC: the address of the next instruction (${r.PC}) goes into the Memory Address Register.`,['MAR'],'CU');
+    r.MBR = m[r.MAR]; push('Fetch',`MBR ← Memory[${r.MAR}]: the instruction "${r.MBR}" is read into the Memory Buffer Register.`,['MBR','M'+r.MAR],'CU');
+    r.IR = r.MBR; r.PC = r.PC + 1; push('Fetch',`IR ← MBR and PC ← PC + 1: the instruction is now in the Instruction Register, and PC points to ${r.PC}.`,['IR','PC'],'CU');
+    const parts = String(r.IR).split(' '); const op = parts[0]; const x = Number(parts[1]);
+    if (op === 'HALT') { push('Decode','The Control Unit decodes HALT: the program stops. Memory[202] now holds 12 = 7 + 5.',[],'CU'); break; }
+    push('Decode',`The Control Unit decodes "${r.IR}": ${desc[op]}`,[],'CU');
+    r.MAR = x; push('Execute',`MAR ← ${x}: the operand's address goes into MAR.`,['MAR'],'CU');
+    if (op === 'STORE') {
+      r.MBR = r.ACC; push('Execute',`MBR ← ACC: the result ${r.ACC} is placed in the buffer register.`,['MBR'],'CU');
+      m[x] = r.MBR; push('Execute',`Memory[${x}] ← MBR: ${r.MBR} is written to main memory.`,['M'+x],'CU');
+    } else {
+      r.MBR = m[x]; push('Execute',`MBR ← Memory[${x}]: the value ${r.MBR} is read into MBR.`,['MBR','M'+x],'CU');
+      if (op === 'LOAD') { r.ACC = r.MBR; push('Execute',`ACC ← MBR: the accumulator now holds ${r.ACC}.`,['ACC'],'ALU'); }
+      else { const old = r.ACC; r.ACC = old + r.MBR; push('Execute',`The ALU adds: ACC ← ACC + MBR = ${old} + ${r.MBR} = ${r.ACC}.`,['ACC'],'ALU'); }
+    }
+  }
+}
+const regInfo = [['PC','Program Counter'],['MAR','Memory Address Reg.'],['MBR','Memory Buffer Reg.'],['IR','Instruction Reg.'],['ACC','Accumulator']];
+let si = 0, runT = null;
+const drawCPU = () => {
+  const s = snaps[si];
+  $('#regs').innerHTML = regInfo.map(([k,n]) => `<div class="reg${s.ch.includes(k)?' ch':''}"><small>${k} · ${n}</small><span class="mono">${esc(s.r[k])}</span></div>`).join('');
+  $('#mem').innerHTML = Object.keys(s.m).map(a => `<tr class="${s.ch.includes('M'+a)?'ch':''}${+a===s.r.PC?' pc':''}"><td class="mono">${a}</td><td class="mono">${esc(s.m[a])}</td></tr>`).join('');
+  $('#phase').textContent = s.ph; $('#msg').textContent = s.msg;
+  $('#uCU').classList.toggle('act', s.u==='CU'); $('#uALU').classList.toggle('act', s.u==='ALU');
+  $('#cCount').textContent = `Step ${si} of ${snaps.length-1}`;
+  $('#cBack').disabled = si===0; $('#cStep').disabled = si===snaps.length-1; $('#cRun').disabled = si===snaps.length-1;
+};
+const stopRun = () => { clearInterval(runT); runT = null; };
+$('#cStep').onclick = () => { stopRun(); if (si<snaps.length-1) si++; drawCPU(); };
+$('#cBack').onclick = () => { stopRun(); if (si>0) si--; drawCPU(); };
+$('#cReset').onclick = () => { stopRun(); si = 0; drawCPU(); };
+$('#cRun').onclick = () => { stopRun(); runT = setInterval(() => { if (si>=snaps.length-1) return stopRun(); si++; drawCPU(); }, reduce?60:700); };
+
+/* ---------- disk ---------- */
+const tracks = [44,62,80,98,116,134];
+let headR = 134, rot = 0, tgt = {t:2, a:200}, busy = false;
+const C = 160;
+function drawDisk() {
+  const svg = $('#disk'); if (!svg) return;
+  const tr = tracks.map(r => `<circle cx="${C}" cy="${C}" r="${r}" fill="none" stroke="#c9c9c4" stroke-width="1"/>`).join('');
+  const spokes = Array.from({length:12}, (_,i) => { const a = i*30*Math.PI/180; return `<line x1="${C+36*Math.cos(a)}" y1="${C+36*Math.sin(a)}" x2="${C+142*Math.cos(a)}" y2="${C+142*Math.sin(a)}" stroke="#dcdcd7" stroke-width="1"/>`; }).join('');
+  const tr0 = tracks[tgt.t], a0 = (tgt.a-12)*Math.PI/180, a1 = (tgt.a+12)*Math.PI/180, ri = tr0-8, ro = tr0+8;
+  const sec = `<path d="M${C+ri*Math.cos(a0)} ${C+ri*Math.sin(a0)} L${C+ro*Math.cos(a0)} ${C+ro*Math.sin(a0)} A${ro} ${ro} 0 0 1 ${C+ro*Math.cos(a1)} ${C+ro*Math.sin(a1)} L${C+ri*Math.cos(a1)} ${C+ri*Math.sin(a1)} A${ri} ${ri} 0 0 0 ${C+ri*Math.cos(a0)} ${C+ri*Math.sin(a0)}Z" fill="#ffe600" stroke="#111315" stroke-width="1.2"/>`;
+  svg.innerHTML = `<circle cx="${C}" cy="${C}" r="146" fill="#f4f4f2" stroke="#111315" stroke-width="2"/>
+  <g transform="rotate(${rot} ${C} ${C})">${spokes}${tr}${sec}</g>
+  <circle cx="${C}" cy="${C}" r="22" fill="#fff" stroke="#111315" stroke-width="2"/><circle cx="${C}" cy="${C}" r="4" fill="#111315"/>
+  <rect x="${C+headR}" y="${C-5}" width="${312-C-headR}" height="10" rx="4" fill="#5b5f63"/>
+  <rect x="${C+headR-7}" y="${C-9}" width="14" height="18" rx="3" fill="#1f5fd6"/>
+  <text x="${C}" y="332" text-anchor="middle" font-size="12" fill="#5b5f63" font-family="Hanken Grotesk, sans-serif">track ${tgt.t+1} of ${tracks.length} · head on the right</text>`;
+}
+const fmt = (v,d=2) => Number(v.toFixed(d)).toLocaleString('en-US',{maximumFractionDigits:d});
+const diskCalc = () => {
+  const seek = +$('#seek').value, rpm = +$('#rpm').value, rate = +$('#rate').value, size = Math.max(0, +$('#fsize').value || 0);
+  const rotMs = 60000/rpm, lat = rotMs/2, acc = seek+lat, xfer = size/rate*1000, tot = acc+xfer;
+  $('#seekV').textContent = seek+' ms'; $('#rateV').textContent = rate+' MB/s';
+  $('#dOut').innerHTML = `<div><small>One rotation</small><b>${fmt(rotMs)} ms</b></div><div><small>Avg latency</small><b>${fmt(lat)} ms</b></div><div class="big"><small>Access time</small><b>${fmt(acc)} ms</b></div><div><small>Transfer time</small><b>${fmt(xfer)} ms</b></div><div><small>Total to read file</small><b>${fmt(tot)} ms</b></div>`;
+  $('#dWork').textContent = `Rotation = 60,000 ÷ ${rpm} = ${fmt(rotMs)} ms. Latency = half a rotation = ${fmt(lat)} ms. Access time = seek + latency = ${seek} + ${fmt(lat)} = ${fmt(acc)} ms. Transfer = ${size} MB ÷ ${rate} MB/s = ${fmt(xfer)} ms.`;
+  return {seek, rotMs};
+};
+['seek','rpm','rate','fsize'].forEach(id => $('#'+id).addEventListener('input', diskCalc));
+const anim = (dur, f) => new Promise(res => { if (reduce) { f(1); return res(); } const t0 = performance.now(); const tick = t => { const p = Math.min(1,(t-t0)/dur); f(p); p<1 ? requestAnimationFrame(tick) : res(); }; requestAnimationFrame(tick); });
+$('#dGo').onclick = async () => {
+  if (busy) return; busy = true; $('#dGo').disabled = true;
+  const {seek, rotMs} = diskCalc();
+  tgt = {t: Math.floor(Math.random()*tracks.length), a: Math.floor(Math.random()*360)}; drawDisk();
+  const r0 = headR, r1 = tracks[tgt.t];
+  $('#dStat').textContent = `Seeking: moving the head to track ${tgt.t+1} (${seek} ms average)…`;
+  await anim(250+seek*90, p => { headR = r0+(r1-r0)*p; drawDisk(); });
+  const start = rot, need = ((360 - ((tgt.a + rot) % 360)) % 360);
+  $('#dStat').textContent = `Latency: waiting for the sector to rotate under the head (${fmt(need/360*rotMs)} ms this time)…`;
+  await anim(300+need*4, p => { rot = start + need*p; drawDisk(); });
+  $('#dStat').textContent = 'Reading: data transfers from the sector to the drive.';
+  await anim(500, p => { rot = start + need + 20*p; drawDisk(); });
+  rot = rot % 360; $('#dStat').textContent = 'Done. Press Read for another random sector.'; busy = false; $('#dGo').disabled = false;
+};
+
+/* ---------- race ---------- */
+const mkTrack = id => { $(id).innerHTML = Array.from({length:16},(_,i)=>`<div class="cell">${i}</div>`).join(''); };
+mkTrack('#tape'); mkTrack('#dsk');
+let raceT = null;
+const markTgt = () => { const t = Math.min(15,Math.max(0,Math.round(+$('#tgt').value||0))); ['#tape','#dsk'].forEach(id => [...$(id).children].forEach((c,i)=>{c.className='cell'+(i===t?' tgt':'')})); $('#tapeN').textContent='0'; $('#diskN').textContent='0'; return t; };
+$('#tgt').addEventListener('input', () => { clearInterval(raceT); markTgt(); });
+$('#rRand').onclick = () => { $('#tgt').value = Math.floor(Math.random()*16); clearInterval(raceT); markTgt(); };
+$('#rGo').onclick = () => {
+  clearInterval(raceT); const t = markTgt(); const tc = [...$('#tape').children], dc = [...$('#dsk').children];
+  dc[t].classList.add('hit'); $('#diskN').textContent = '1';
+  let i = 0;
+  raceT = setInterval(() => { tc[i].classList.add(i===t?'hit':'scan'); $('#tapeN').textContent = i+1; if (i>=t) clearInterval(raceT); i++; }, reduce?20:220);
+};
+markTgt();
+
+/* ---------- converter ---------- */
+const units = [['bit',1/8],['byte',1],['KB',1024],['MB',1024**2],['GB',1024**3],['TB',1024**4]];
+const conv = () => {
+  const v = Math.max(0, +$('#uv').value || 0), u = units.find(x=>x[0]===$('#uu').value)[1], bytes = v*u;
+  $('#uOut').innerHTML = units.map(([n,f]) => { const x = n==='bit' ? bytes*8 : bytes/f; const s = x>=1e15||(x>0&&x<1e-6) ? x.toExponential(4) : x.toLocaleString('en-US',{maximumFractionDigits:6}); return `<tr><td>${n}${n==='bit'||n==='byte'?'s':''}</td><td class="mono" style="text-align:right">${s}</td></tr>`; }).join('');
+};
+$('#uv').addEventListener('input', conv); $('#uu').addEventListener('change', conv); conv();
+
+/* ---------- flashcards ---------- */
+const cardsData = [
+['What is the smallest unit of memory?','A bit (binary digit): 0 or 1.'],
+['How many bits make a byte?','8 bits. One byte stores one character.'],
+['1 KB equals how many bytes?','1024 bytes (2^10).'],
+['Define capacity of memory.','The amount of information (bits or bytes) a memory can store.'],
+['Define access time.','The time between a read/write request and the data becoming available. Less access time = faster memory.'],
+['Which is the fastest memory?','Registers inside the CPU, then cache.'],
+['What does volatile memory mean?','It loses its contents when power is switched off. Example: RAM.'],
+['Is ROM volatile?','No. ROM is non-volatile; it keeps its contents without power.'],
+['What is DRAM made of?','One transistor and one capacitor per cell. It must be refreshed continually.'],
+['DRAM access speed?','About 50–150 ns.'],
+['What is SRAM made of?','4 to 6 transistors per cell (a flip-flop). No refresh needed.'],
+['SRAM access speed?','About 2–10 ns.'],
+['Where are DRAM and SRAM used?','DRAM: main memory (cheap, dense). SRAM: cache (fast, expensive).'],
+['SIMM vs DIMM data path?','SIMM 32-bit (one set of contacts). DIMM 64-bit (separate contacts on each side).'],
+['What does POST do?','Power-On Self-Test: checks the essential hardware at switch-on.'],
+['What does the bootstrap loader do?','Finds the operating system on storage and loads it into RAM.'],
+['What does the CMOS chip store?','BIOS settings such as date/time and boot order, kept by a small battery.'],
+['How is PROM programmed?','By the user, only once. It cannot be erased.'],
+['How is EPROM erased?','With ultraviolet light, the whole chip at once, removed from the circuit.'],
+['How is EEPROM erased?','Electrically, byte by byte, without removing it from the circuit.'],
+['Name three features of flash memory.','Non-volatile, electrically erased in blocks, no moving parts (also small, low power, limited write cycles).'],
+['Sequential access example?','Magnetic tape: data is read in order from the start.'],
+['Direct access examples?','Magnetic disk and optical disk (CD, DVD).'],
+['Define seek time.','Time to move the read/write head to the desired track.'],
+['Define latency time.','Time for the desired sector to rotate under the read/write head.'],
+['Access time of a disk =','Seek time + latency time.'],
+['How does a CD-ROM store data?','As pits and lands. Pits scatter laser light (0); lands reflect it (1).'],
+['DVD-ROM capacity?','4.7 GB per side; 9.4 GB double-sided.'],
+['What are the parts of the CPU?','ALU, Control Unit and registers.'],
+['What does the Program Counter hold?','The address of the next instruction to be processed.'],
+['What does the Instruction Register hold?','The current instruction, most recently fetched.'],
+['What does the Accumulator hold?','Results of arithmetic and logic operations.'],
+['What does MAR hold?','The address of the next memory location to be accessed.'],
+['What does MBR hold?','Data just read from memory, or data to be written to memory.'],
+['What does the Control Unit do?','Coordinates I/O and directs execution: when to fetch, what to do, where to store results, and the sequence of events.']
+];
+let order = store.get('fcOrder', cardsData.map((_,i)=>i)); if (order.length !== cardsData.length) order = cardsData.map((_,i)=>i);
+let known = new Set(store.get('fcKnown', [])); let fi = 0;
+const drawCard = () => { const c = cardsData[order[fi]]; $('#card').classList.remove('flip'); $('#fcQ').textContent = c[0]; $('#fcA').textContent = c[1]; $('#fcPos').textContent = `Card ${fi+1} of ${order.length}${known.has(order[fi])?' · known':''}`; $('#fKnown').textContent = `${known.size} / ${cardsData.length}`; $('#fBar').style.width = (known.size/cardsData.length*100)+'%'; $('#fKnow').textContent = known.has(order[fi]) ? 'Mark as not known' : 'I know this'; };
+const flip = () => $('#card').classList.toggle('flip');
+$('#card').onclick = flip;
+$('#card').addEventListener('keydown', e => { if (e.key===' '||e.key==='Enter') { e.preventDefault(); flip(); } });
+const move = d => { fi = (fi + d + order.length) % order.length; drawCard(); };
+$('#fNext').onclick = () => move(1); $('#fPrev').onclick = () => move(-1);
+$('#fShuf').onclick = () => { for (let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];} fi=0; store.set('fcOrder',order); drawCard(); };
+$('#fKnow').onclick = () => { const k = order[fi]; known.has(k) ? known.delete(k) : known.add(k); store.set('fcKnown',[...known]); if (known.has(k)) move(1); else drawCard(); };
+addEventListener('keydown', e => { if (!$('#v-cards').classList.contains('on') || e.target.matches('input,select')) return; if (e.key==='ArrowRight') move(1); if (e.key==='ArrowLeft') move(-1); });
+
+/* ---------- quiz ---------- */
+const Q = [
+['The basic unit used to measure memory, which stores one character, is the:',['Bit','Byte','Word','Nibble'],1,'A byte is 8 bits and holds one character. The bit is the smallest unit.'],
+['Access time is the time between:',['Power-on and boot','A read/write request and the data becoming available','Two clock pulses','Seek and latency'],1,'Lower access time means faster memory.'],
+['Which memory is the fastest?',['Cache','RAM','Registers','Hard disk'],2,'Registers are inside the CPU: fastest, smallest.'],
+['Moving down the memory hierarchy, which increases?',['Speed','Cost per bit','Capacity','Nearness to the CPU'],2,'Lower levels are bigger, slower and cheaper per bit.'],
+['RAM is described as volatile because it:',['Can only be read','Loses data when power is off','Must be erased with UV light','Uses magnetism'],1,'Unsaved work in RAM is lost in a power cut.'],
+['DRAM must be refreshed because:',['Its capacitors leak charge','It uses lasers','It is read-only','It has too many transistors'],0,'The refresh circuit rewrites each cell many times per second.'],
+['SRAM is mainly used for:',['Main memory','Cache memory','BIOS storage','Backup'],1,'It is fast (2–10 ns) but expensive.'],
+['Typical access speed of DRAM is:',['2–10 ns','50–150 ns','5–10 ms','1 second'],1,'SRAM is 2–10 ns; hard disks work in milliseconds.'],
+['A DIMM differs from a SIMM because it:',['Has a 64-bit data path with separate contacts on each side','Is non-volatile','Has only 30 pins','Must be installed in pairs'],0,'SIMMs are 32-bit and usually installed in pairs.'],
+['The program that checks hardware when a computer is switched on is:',['CMOS','Bootstrap loader','POST','Device driver'],2,'POST = Power-On Self-Test.'],
+['The bootstrap loader:',['Stores the date and time','Loads the operating system into RAM','Erases EPROM','Refreshes DRAM'],1,'It is stored in ROM and starts the boot.'],
+['BIOS settings such as boot order are kept in:',['CMOS, powered by a battery','DRAM','Cache','The accumulator'],0,'The battery keeps CMOS contents while the PC is off.'],
+['Which ROM can be programmed only once?',['EPROM','EEPROM','Flash','PROM'],3,'PROM fuses are burnt once and cannot be reset.'],
+['EPROM is erased using:',['Electric signals, byte by byte','Ultraviolet light','A magnet','Overwriting'],1,'The chip has a quartz window for UV light.'],
+['Which is erased electrically without removing it from the circuit?',['PROM','EPROM','EEPROM','Mask ROM'],2,'Flash memory is a block-erase form of EEPROM.'],
+['Which device uses sequential access?',['Hard disk','DVD','Magnetic tape','Flash drive'],2,'Tape must wind past earlier data.'],
+['Seek time is the time to:',['Rotate the sector under the head','Move the head to the desired track','Transfer data to RAM','Boot the computer'],1,'Rotation wait is latency.'],
+['Disk access time equals:',['Seek time + latency time','Latency − seek','Transfer rate × size','Seek time only'],0,'Some texts add transfer time for a whole read.'],
+['A disk spins at 6000 rpm. Its average latency is:',['10 ms','5 ms','6 ms','60 ms'],1,'One rotation = 60/6000 s = 10 ms; half = 5 ms.'],
+['On a CD-ROM, data is stored as:',['Magnetised spots','Pits and lands','Capacitor charges','Fuses'],1,'Pits scatter light (0), lands reflect it (1).'],
+['A double-sided DVD-ROM stores:',['700 MB','1.44 MB','4.7 GB','9.4 GB'],3,'4.7 GB per side.'],
+['Which register holds the address of the next instruction?',['IR','ACC','PC','MBR'],2,'The Program Counter increments after each fetch.'],
+['Which register holds the result of an ALU operation?',['Accumulator','MAR','PC','IR'],0,'ACC = accumulator.'],
+['The MAR holds:',['Data from memory','The address of the memory location to access','The current instruction','The result'],1,'MBR holds the data; MAR holds the address.'],
+['Comparisons such as greater than or equal to are done by the:',['Control Unit','Logic unit of the ALU','MAR','Cache'],1,'The arithmetic unit does + − × ÷.'],
+['Which part of the CPU decides when to fetch and where to store results?',['ALU','Control Unit','Accumulator','ROM'],1,'The CU sequences all events during processing.']
+];
+let qs = store.get('quiz', null);
+const newQuiz = () => { const idx = Q.map((_,i)=>i); for (let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];} qs = {idx, i:0, ans:[], best: qs?.best||0}; store.set('quiz',qs); drawQuiz(); };
+const drawQuiz = () => {
+  const box = $('#quizBox');
+  if (!qs || !Array.isArray(qs.idx) || qs.idx.length !== Q.length) { qs = null; return newQuiz(); }
+  const score = qs.ans.filter((a,k)=>a===Q[qs.idx[k]][2]).length;
+  if (qs.i >= Q.length) {
+    if (score > (qs.best||0)) { qs.best = score; store.set('quiz',qs); }
+    const wrong = qs.idx.map((q,k)=>[q,qs.ans[k]]).filter(([q,a])=>a!==Q[q][2]);
+    box.innerHTML = `<h2>Your score: ${score} / ${Q.length}</h2><p class="muted">Best so far: ${qs.best} / ${Q.length}. ${score>=22?'Excellent: you are exam ready.':score>=16?'Good. Review the questions below.':'Revisit the Explore notes and try again.'}</p><div class="bar" style="margin:12px 0 22px"><i style="width:${score/Q.length*100}%"></i></div>${wrong.length?'<h3>Review</h3>'+wrong.map(([q,a])=>`<div class="exp"><b>${esc(Q[q][0])}</b><br>Your answer: ${esc(Q[q][1][a])}<br>Correct: <b>${esc(Q[q][1][Q[q][2]])}</b>. ${esc(Q[q][3])}</div>`).join(''):'<p>No mistakes. Well done.</p>'}<button class="btn" id="qNew">Try again</button>`;
+    return;
+  }
+  const q = Q[qs.idx[qs.i]], done = qs.ans.length > qs.i;
+  box.innerHTML = `<div class="row" style="justify-content:space-between"><span class="muted small" style="font-weight:600">Question ${qs.i+1} of ${Q.length}</span><span class="muted small">Score ${score}</span></div><div class="bar" style="margin:8px 0 18px"><i style="width:${qs.i/Q.length*100}%"></i></div><h2>${esc(q[0])}</h2>${q[1].map((o,k)=>`<button class="opt${done&&k===q[2]?' right':''}${done&&k===qs.ans[qs.i]&&k!==q[2]?' wrong':''}" data-k="${k}" ${done?'disabled':''}>${esc(o)}</button>`).join('')}${done?`<div class="exp"><b>${qs.ans[qs.i]===q[2]?'Correct.':'Not quite.'}</b> ${esc(q[3])}</div><button class="btn" id="qNext">${qs.i===Q.length-1?'See results':'Next question'}</button>`:''} <button class="btn ghost" id="qNew" style="margin-left:6px">Restart</button>`;
+};
+$('#quizBox').addEventListener('click', e => {
+  const o = e.target.closest('.opt');
+  if (o && !o.disabled) { qs.ans[qs.i] = +o.dataset.k; store.set('quiz',qs); drawQuiz(); return; }
+  if (e.target.id === 'qNext') { qs.i++; store.set('quiz',qs); drawQuiz(); }
+  if (e.target.id === 'qNew') newQuiz();
+});
+
+/* ---------- tutorial ---------- */
+const T = [
+['What is the unit of memory representation in a computer?','The basic unit is the <b>bit</b> (0 or 1). 8 bits make a <b>byte</b>, the basic unit for measuring memory; one byte stores one character. Larger units: word (16/32/64 bits), KB = 1024 bytes, MB = 1024 KB, GB = 1024 MB, TB = 1024 GB.'],
+['Define (1) Capacity of memory, (2) Access time of memory.','(1) <b>Capacity</b>: the amount of information, in bits or bytes, that a memory can store. (2) <b>Access time</b>: the time between a read/write request and the data becoming available. Lower access time means faster memory.'],
+['List the key features of the main memory.','Directly accessed by the CPU; mounted on the motherboard; faster than secondary memory; smaller capacity; more expensive per byte; RAM is volatile (ROM is non-volatile); holds the programs and data in use; built from semiconductor chips.'],
+['Which is the fastest memory?','<b>Registers</b> inside the CPU, followed by cache memory (SRAM).'],
+['Show the memory hierarchy.','Top to bottom: <b>Registers → Cache → Primary memory (RAM/ROM) → Secondary storage (magnetic disk, SSD) → Offline storage (optical disk, magnetic tape)</b>. Going up: faster and costlier per bit. Going down: larger capacity, slower, cheaper. (See the pyramid in Explore.)'],
+['Why is primary memory faster than the secondary memory?','Primary memory is electronic (semiconductor chips, no moving parts), sits on the motherboard close to the CPU and is accessed directly. Secondary devices are often mechanical (spinning disks, moving heads, tape) with seek and rotational delays, and are reached through I/O controllers. Their data must be copied into RAM before the CPU can use it.'],
+['What is the meaning of volatile memory? Also give an example.','Volatile memory loses its contents when the power is switched off. Example: <b>RAM</b> (DRAM main memory, SRAM cache).'],
+['"The performance of RAM is affected by the access speed and the data transfer unit size". Explain.','<b>Access speed</b> is how quickly data can be retrieved from RAM, in nanoseconds; lower access time means the CPU waits less. <b>Data transfer unit size</b> is how much data moves in one transfer (e.g. 64 bits instead of 32). Larger units deliver more data per access. Together they set the memory bandwidth and so the computer\'s overall speed.'],
+['List the features of the DRAM memory chip.','Most common memory chip; used as main memory; small and cheap; each cell uses one transistor and one capacitor; must be refreshed continually; access speed 50–150 ns; high density; volatile.'],
+['Explain the working of the DRAM memory chip.','Each bit is stored as charge in a tiny capacitor, with a transistor as a switch. Charged = 1, empty = 0. The charge leaks within milliseconds, so a refresh circuit periodically reads and rewrites every cell. Reading also drains the charge, so the value is rewritten after each read. This constant refresh is why it is <i>dynamic</i> RAM and slower than SRAM.'],
+['List the features of the SRAM memory chip.','Used for cache because of its high speed; 4–6 transistors per cell (flip-flop); no refreshing needed while powered; faster than DRAM (2–10 ns); more expensive and less dense than DRAM; volatile.'],
+['What is the difference between the SIMM and DIMM memory modules?','<b>SIMM</b>: contacts on both sides are joined (one set), 32-bit data path, 30 or 72 pins, usually installed in pairs, older PCs. <b>DIMM</b>: contacts on each side are separate (two sets), 64-bit data path, 168/184/240/288 pins, can be installed singly, modern PCs.'],
+['What are the functions of Bootstrap loader, POST and CMOS chip?','<b>Bootstrap loader</b>: a ROM program that finds the operating system and loads it into RAM. <b>POST</b>: Power-On Self-Test, checks the essential hardware (CPU, RAM, keyboard, drives) at switch-on and reports faults. <b>CMOS</b>: battery-backed memory storing BIOS settings (date/time, boot order, hardware configuration) while the computer is off.'],
+['List the different kinds of ROM memory.','Mask ROM, PROM, EPROM, EEPROM and flash memory.'],
+['How are these different: PROM, EPROM and EEPROM?','<b>PROM</b>: programmed once by the user, cannot be erased. <b>EPROM</b>: erased with ultraviolet light (whole chip, removed from the circuit), reprogrammable. <b>EEPROM</b>: erased and reprogrammed electrically, byte by byte, without removing it from the circuit.'],
+['What are the features of the flash memory?','Semiconductor-based; non-volatile; electrically erased and reprogrammed in blocks (a fast EEPROM); no moving parts, so shock-resistant and silent; small, light and portable; low power; limited write/erase cycles. Used in pen drives, memory cards and SSDs.'],
+['What do you mean by sequential access?','Data is read in order from the beginning until the required data is reached, so access time depends on its position. Example: magnetic tape. Sequential devices are slow.'],
+['What is the meaning of direct access?','Any data can be retrieved directly from its location using its address, without reading the data before it. Examples: magnetic disk and optical disk.'],
+['How does a magnetic tape drive work?','The tape (plastic coated with magnetic oxide) runs from a supply reel to a take-up reel past a read/write head at constant speed. Writing magnetises spots in parallel tracks; reading senses them. Records are separated by gaps. The tape must be wound to the required position, so access is sequential.'],
+['Explain briefly the working of the magnetic disk.','A platter coated with magnetic oxide is divided into concentric <b>tracks</b> and each track into <b>sectors</b>. A spindle motor spins it at constant speed. A read/write head on a movable arm moves to the track (seek), waits for the sector to rotate under it (latency), then reads or writes. Magnetised spot = 1, no spot = 0.'],
+['Define (i) seek time, (ii) latency time, (iii) data transfer rate, and (iv) access time of the magnetic disk.','(i) <b>Seek time</b>: time to move the head to the desired track. (ii) <b>Latency</b>: time for the desired sector to rotate under the head. (iii) <b>Data transfer rate</b>: rate at which data is read from or written to the disk. (iv) <b>Access time</b> = seek time + latency time.'],
+['List the key features of the floppy disk.','Flexible magnetic disk in a plastic jacket; portable; small and inexpensive; direct access; 5¼-inch (360 KB–1.2 MB) and 3½-inch (up to 1.44 MB) sizes; slow, low capacity, easily damaged; now obsolete.'],
+['List the key features of the optical disk.','Flat circular disk with a reflective coating altered by laser light; no magnetism; bits stored as bright and dark spots on a spiral track; direct access; portable and durable; unaffected by magnetic fields; large capacity at low cost; slower than hard disks. Examples: CD-ROM, DVD-ROM.'],
+['List the key features of CD-ROM.','Read-only; data stored as pits (depressions) and lands (flat areas); laser read: pits scatter light (0), lands reflect it to a sensor (1); about 650–700 MB; single spiral track; written at the factory, read many times.'],
+['List the key features of DVD-ROM.','High-density: smaller tracks and pits than a CD; can use both sides; uses data compression; 4.7 GB per side, 9.4 GB double-sided; holds a full-length movie.'],
+['When you write a program and the electricity goes off, your program is lost if you have not saved it. Why?','While you write, the program is held in <b>RAM</b>, which is volatile and needs continuous power. A power cut erases RAM. Saving copies the program to secondary storage (hard disk, SSD), which is non-volatile.']
+];
+let tDone = new Set(store.get('tDone', [])); const tShow = new Set();
+const drawTut = () => {
+  $('#tList').innerHTML = T.map((t,i) => `<div class="tq${tDone.has(i)?' done':''}${tShow.has(i)?' show':''}"><div class="qh"><div class="n">${i+1}</div><div class="qt">${esc(t[0])}</div></div><div class="ans">${t[1]}</div><div class="acts row"><button class="btn ghost" data-r="${i}">${tShow.has(i)?'Hide answer':'Reveal answer'}</button><label class="chk"><input type="checkbox" data-d="${i}" ${tDone.has(i)?'checked':''}>I can answer this</label></div></div>`).join('');
+  $('#tDone').textContent = `${tDone.size} / ${T.length}`; $('#tBar').style.width = (tDone.size/T.length*100)+'%';
+  $('#tAll').textContent = tShow.size===T.length ? 'Hide all answers' : 'Show all answers';
+};
+$('#tList').addEventListener('click', e => { const r = e.target.dataset.r; if (r!==undefined) { tShow.has(+r)?tShow.delete(+r):tShow.add(+r); drawTut(); } });
+$('#tList').addEventListener('change', e => { const d = e.target.dataset.d; if (d!==undefined) { e.target.checked?tDone.add(+d):tDone.delete(+d); store.set('tDone',[...tDone]); drawTut(); } });
+$('#tAll').onclick = () => { if (tShow.size===T.length) tShow.clear(); else T.forEach((_,i)=>tShow.add(i)); drawTut(); };
+
+/* ---------- boot ---------- */
+drawPyr(); drawCPU(); diskCalc(); drawDisk(); drawCard(); drawQuiz(); drawTut(); route();
+}
+</script>
+</body>
+</html>
